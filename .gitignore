@@ -1,0 +1,28 @@
+mcc.config.json
+server/sessions.json
+node_modules/
+*.log
+/tmp/mcc-*
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Android
+apk/.gradle/
+apk/build/
+apk/app/build/
+apk/local.properties
+apk/.idea/
+apk/*.iml
+apk/captures/
+# 但保留 release/ 下的预编译 apk 供分发
+*.apk
+!release/*.apk
+*.keystore
+
+# Bun
+.bun/
+
+# Java
+*.class

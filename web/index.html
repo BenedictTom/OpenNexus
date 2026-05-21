@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/logo.png">
+<title>OpenNexus</title>
+<style>
+/* ─── iOS-inspired design tokens ─────────────────────────── */
+:root {
+    --bg: #F2F2F7;
+    --bg-elevated: rgba(255,255,255,0.72);
+    --surface: #FFFFFF;
+    --surface-2: #F9F9FB;
+    --label: #000000;
+    --label-2: rgba(60,60,67,0.60);
+    --label-3: rgba(60,60,67,0.30);
+    --separator: rgba(60,60,67,0.18);
+    --accent: #000000;
+    --accent-fg: #FFFFFF;
+    --success: #34C759;
+    --warning: #FF9500;
+    --error: #FF3B30;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-lg: 0 12px 36px rgba(0,0,0,0.14);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #000000;
+        --bg-elevated: rgba(28,28,30,0.72);
+        --surface: #1C1C1E;
+        --surface-2: #2C2C2E;
+        --label: #FFFFFF;
+        --label-2: rgba(235,235,245,0.60);
+        --label-3: rgba(235,235,245,0.30);
+        --separator: rgba(84,84,88,0.65);
+        --accent: #FFFFFF;
+        --accent-fg: #000000;
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+        --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+        --shadow-lg: 0 12px 36px rgba(0,0,0,0.6);
+    }
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overscroll-behavior-y: contain; }
+body {
+    margin: 0;
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--label);
+    padding-bottom: env(safe-area-inset-bottom);
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* ─── nav bar (毛玻璃, scroll 时浮起) ──────────────────────── */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: max(8px, env(safe-area-inset-top)) 20px 8px;
+    background: var(--bg-elevated);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid transparent;
+    transition: border-color .2s;
+}
+.navbar.scrolled { border-bottom-color: var(--separator); }
+.navbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 44px;
+}
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.brand img {
+    width: 36px;
+    height: 36px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+@media (prefers-color-scheme: dark) { .brand img { filter: invert(1); } }
+.brand-name {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+.navbar .add-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 0;
+    background: var(--accent);
+    color: var(--accent-fg);
+    font-size: 22px; line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .15s var(--ease);
+}
+.navbar .add-btn:active { transform: scale(0.9); }
+
+/* ─── large title (iOS Large Title) ───────────────────────── */
+.large-title {
+    padding: 4px 20px 14px;
+}
+.large-title h1 {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    line-height: 1.05;
+}
+.large-title .meta {
+    margin-top: 6px;
+    color: var(--label-2);
+    font-size: 14px;
+}
+
+/* ─── content ─────────────────────────────────────────────── */
+main { padding: 0 16px 120px; }
+
+.section-list {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+.cell {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface);
+    transition: background .12s;
+    position: relative;
+}
+.cell:active { background: var(--surface-2); }
+.cell + .cell::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 50px; right: 0;
+    height: 0.5px;
+    background: var(--separator);
+}
+.cell .leading {
+    width: 12px; height: 12px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    position: relative;
+    background: var(--label-3);
+}
+.cell .leading.active { background: var(--success); }
+.cell .leading.active::after {
+    content: "";
+    position: absolute; inset: -5px;
+    border-radius: 50%;
+    background: var(--success);
+    opacity: 0.22;
+    animation: breathe 2.4s ease-in-out infinite;
+}
+.cell .leading.dead { background: var(--error); }
+@keyframes breathe {
+    0%, 100% { transform: scale(0.85); opacity: 0.15; }
+    50%      { transform: scale(1.15); opacity: 0.30; }
+}
+.cell .body { flex: 1; min-width: 0; }
+.cell .title {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+    color: var(--label);
+}
+.cell .subtitle {
+    font-size: 13px;
+    color: var(--label-2);
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+.cell .chev {
+    color: var(--label-3);
+    flex-shrink: 0;
+    display: flex;
+}
+.cell .delete-btn {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    color: var(--label-2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s;
+    flex-shrink: 0;
+}
+.cell .delete-btn:active {
+    background: rgba(255,59,48,0.15);
+    color: var(--error);
+}
+
+/* ─── empty state ─────────────────────────────────────────── */
+.empty {
+    text-align: center;
+    padding: 80px 32px 40px;
+    color: var(--label-2);
+}
+.empty .icon-wrap {
+    width: 72px; height: 72px;
+    margin: 0 auto 20px;
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; justify-content: center;
+}
+.empty .icon-wrap svg { width: 32px; height: 32px; color: var(--label-2); }
+.empty h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--label);
+    margin: 0 0 6px;
+    letter-spacing: -0.3px;
+}
+.empty p {
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 0;
+}
+.empty .primary-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 22px;
+    padding: 12px 22px;
+    border-radius: 100px;
+    background: var(--accent);
+    color: var(--accent-fg);
+    font-size: 15px;
+    font-weight: 600;
+    border: 0;
+    cursor: pointer;
+    transition: transform .15s var(--ease);
+}
+.empty .primary-btn:active { transform: scale(0.96); }
+
+/* ─── dialog (iOS alert / sheet 风) ─────────────────────── */
+dialog {
+    border: 0;
+    border-radius: 18px;
+    padding: 0;
+    width: calc(100vw - 48px);
+    max-width: 320px;
+    background: var(--surface);
+    color: var(--label);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    animation: dlg-in .25s var(--ease);
+}
+@keyframes dlg-in {
+    from { transform: scale(0.96); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+}
+dialog::backdrop {
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: bd-in .2s var(--ease);
+}
+@keyframes bd-in { from { opacity: 0; } to { opacity: 1; } }
+
+dialog .dlg-head {
+    text-align: center;
+    padding: 20px 20px 6px;
+}
+dialog .dlg-head h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+}
+dialog .dlg-desc {
+    text-align: center;
+    padding: 0 20px 16px;
+    color: var(--label-2);
+    font-size: 13px;
+    line-height: 1.5;
+}
+dialog form {
+    padding: 0 16px 16px;
+}
+dialog input {
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--surface-2);
+    color: var(--label);
+    outline: none;
+    transition: background .15s;
+}
+dialog input:focus { background: var(--bg); box-shadow: 0 0 0 2px var(--label-3); }
+dialog .dlg-actions {
+    border-top: 0.5px solid var(--separator);
+    display: flex;
+}
+dialog .dlg-actions button {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    padding: 14px 8px;
+    font: inherit;
+    font-size: 17px;
+    color: var(--accent);
+    cursor: pointer;
+}
+dialog .dlg-actions button + button {
+    border-left: 0.5px solid var(--separator);
+}
+dialog .dlg-actions button:active { background: var(--surface-2); }
+dialog .dlg-actions button.default { font-weight: 600; }
+dialog .dlg-actions button.danger { color: var(--error); font-weight: 600; }
+dialog .dlg-actions button.muted { color: var(--label-2); }
+
+/* ─── 文件夹选择器 (新建会话用) ─────────────────────────── */
+dialog#dlg.picker {
+    max-width: 460px;
+}
+.picker-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 0.5px solid var(--separator);
+    background: var(--surface-2);
+}
+.picker-bar .icon-btn {
+    width: 32px; height: 32px;
+    border: 0; background: transparent;
+    border-radius: 8px;
+    color: var(--label);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .15s;
+}
+.picker-bar .icon-btn:active { background: var(--bg); }
+.picker-bar .icon-btn svg { width: 18px; height: 18px; }
+.picker-path {
+    flex: 1;
+    font: 12.5px ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    color: var(--label-2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    direction: rtl; text-align: left; /* 长路径优先显示末尾 */
+}
+.picker-list {
+    max-height: 340px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.picker-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px;
+    cursor: pointer; user-select: none;
+    position: relative;
+    transition: background .12s;
+}
+.picker-row:active { background: var(--surface-2); }
+.picker-row + .picker-row::before {
+    content: ""; position: absolute;
+    top: 0; left: 42px; right: 0;
+    height: 0.5px; background: var(--separator);
+}
+.picker-row .icon { width: 22px; height: 22px; flex-shrink: 0; color: #FFA800; }
+.picker-row .icon svg { width: 100%; height: 100%; }
+.picker-row .name {
+    flex: 1; font-size: 15px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.picker-row .chev { color: var(--label-3); }
+.picker-empty {
+    padding: 28px 16px; text-align: center;
+    color: var(--label-2); font-size: 13px;
+}
+.picker-foot {
+    border-top: 0.5px solid var(--separator);
+    padding: 10px 14px;
+    background: var(--surface-2);
+    font-size: 12px; color: var(--label-2);
+    display: flex; align-items: center; gap: 8px;
+}
+.picker-foot .pf-label { flex-shrink: 0; }
+.picker-foot .pf-cur {
+    font: 12px ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    color: var(--label);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ─── toast (iOS HUD 风) ────────────────────────────────── */
+.toast {
+    position: fixed;
+    bottom: calc(40px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(20,20,22,0.92);
+    color: white;
+    padding: 11px 20px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s var(--ease), transform .25s var(--ease);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-md);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── banner ──────────────────────────────────────────────── */
+.banner {
+    margin: 0 16px 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(255,59,48,0.10);
+    color: var(--error);
+    font-size: 13.5px;
+    display: none;
+}
+.banner.show { display: block; }
+</style>
+</head>
+<body>
+
+<nav class="navbar" id="navbar">
+    <div class="navbar-inner">
+        <div class="brand">
+            <img src="/logo.png" alt="OpenNexus">
+            <span class="brand-name">OpenNexus</span>
+        </div>
+        <button class="add-btn" onclick="openCreate()" aria-label="新建会话">+</button>
+    </div>
+</nav>
+
+<div class="large-title">
+    <div class="meta" id="meta">加载中…</div>
+</div>
+
+<div class="banner" id="banner"></div>
+<main id="list"></main>
+
+<dialog id="dlg" class="picker">
+    <div class="dlg-head"><h3>新建会话</h3></div>
+    <div class="dlg-desc">选择一个文件夹作为项目目录</div>
+
+    <div class="picker-bar">
+        <button type="button" class="icon-btn" id="pkUp" title="上级">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="pkHome" title="Home">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 12 12 4l9 8"/><path d="M5 10v9h14v-9"/></svg>
+        </button>
+        <div class="picker-path" id="pkPath">/</div>
+    </div>
+
+    <div class="picker-list" id="pkList"></div>
+
+    <div class="picker-foot">
+        <span class="pf-label">将创建于:</span>
+        <span class="pf-cur" id="pkCur" dir="rtl">—</span>
+    </div>
+
+    <div class="dlg-actions">
+        <button type="button" class="muted" onclick="dlg.close()">取消</button>
+        <button type="button" class="default" id="pkCreate" onclick="createSession()">在此创建</button>
+    </div>
+</dialog>
+
+<dialog id="confirmDlg">
+    <div class="dlg-head"><h3>关闭会话?</h3></div>
+    <div class="dlg-desc">Claude 进程会被中断,未保存的对话上下文会丢失。项目文件不受影响。</div>
+    <div class="dlg-actions">
+        <button type="button" onclick="confirmDlg.close()">取消</button>
+        <button type="button" class="danger" onclick="doDelete()">关闭</button>
+    </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const dlg = document.getElementById('dlg');
+const confirmDlg = document.getElementById('confirmDlg');
+const list = document.getElementById('list');
+const meta = document.getElementById('meta');
+const banner = document.getElementById('banner');
+const navbar = document.getElementById('navbar');
+const toastEl = document.getElementById('toast');
+
+// ── 文件夹选择器状态 ──
+const pkPathEl = document.getElementById('pkPath');
+const pkCurEl = document.getElementById('pkCur');
+const pkListEl = document.getElementById('pkList');
+const pkUpBtn = document.getElementById('pkUp');
+const pkHomeBtn = document.getElementById('pkHome');
+const pkCreateBtn = document.getElementById('pkCreate');
+let pkState = { path: '', parent: null, home: '', entries: [] };
+let pendingDelete = null;
+let sessions = [];
+
+// nav 滚动时显分隔线
+window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 4);
+}, { passive: true });
+
+function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+function showBanner(msg) {
+    if (msg) { banner.textContent = msg; banner.classList.add('show'); }
+    else banner.classList.remove('show');
+}
+
+async function load() {
+    try {
+        const r = await fetch('/api/sessions');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        sessions = await r.json();
+        showBanner('');
+        render();
+    } catch (e) {
+        showBanner(`连不上状态服务: ${e.message}`);
+        meta.textContent = '离线';
+        if (!sessions.length) renderEmptyOffline(e.message);
+    }
+}
+
+function escHtml(s) { return String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+function esc(s) { return String(s).replace(/'/g, "\\'"); }
+
+function render() {
+    meta.textContent = sessions.length ? `${sessions.length} 个会话 · 同步中` : '点 + 新建';
+    if (!sessions.length) return renderEmpty();
+    list.innerHTML = `<div class="section-list">${sessions.map(cellHtml).join('')}</div>`;
+}
+
+function cellHtml(s) {
+    return `
+    <div class="cell" onclick="openSession('${esc(s.name)}')">
+        <span class="leading ${s.status}"></span>
+        <div class="body">
+            <div class="title">${escHtml(s.name)}</div>
+            <div class="subtitle">${escHtml(s.path)}</div>
+        </div>
+        <button class="delete-btn" onclick="event.stopPropagation(); askDelete('${esc(s.name)}')" aria-label="关闭">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <line x1="6" y1="6" x2="14" y2="14"/><line x1="14" y1="6" x2="6" y2="14"/>
+            </svg>
+        </button>
+        <span class="chev">
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="2,2 8,8 2,14"/>
+            </svg>
+        </span>
+    </div>`;
+}
+
+function renderEmpty() {
+    list.innerHTML = `
+    <div class="empty">
+        <div class="icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h16v10H8l-4 4z"/>
+            </svg>
+        </div>
+        <h2>还没有会话</h2>
+        <p>新建一个会话<br>选择项目目录,Claude 会在那里启动</p>
+        <button class="primary-btn" onclick="openCreate()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                <line x1="7" y1="2" x2="7" y2="12"/><line x1="2" y1="7" x2="12" y2="7"/>
+            </svg>
+            新建会话
+        </button>
+    </div>`;
+}
+
+function renderEmptyOffline(msg) {
+    list.innerHTML = `
+    <div class="empty">
+        <div class="icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12" y2="20"/><line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+        </div>
+        <h2>无法连接</h2>
+        <p>检查 Mac 端 start.sh 是否在运行<br><span style="font-size:12px;opacity:0.7">${escHtml(msg)}</span></p>
+    </div>`;
+}
+
+function openSession(name) {
+    location.href = `/chat.html?name=${encodeURIComponent(name)}`;
+}
+function openCreate() {
+    dlg.showModal();
+    pkLoad();  // 默认起步 $HOME
+}
+function askDelete(name) {
+    pendingDelete = name;
+    confirmDlg.showModal();
+}
+
+async function doDelete() {
+    const name = pendingDelete;
+    confirmDlg.close();
+    pendingDelete = null;
+    if (!name) return;
+    try {
+        const r = await fetch(`/api/sessions/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        toast(r.ok ? `已关闭 ${name}` : `关闭失败 (${r.status})`);
+        load();
+    } catch (e) { toast(`关闭失败: ${e.message}`); }
+}
+
+// ── 文件夹选择器 ────────────────────────────────────────
+const PK_ICON_FOLDER = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6a2 2 0 0 1 2-2h3.6a2 2 0 0 1 1.4.6L12.4 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>`;
+const PK_ICON_CHEV = `<svg viewBox="0 0 10 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,2 8,8 2,14"/></svg>`;
+
+function pkRender() {
+    pkPathEl.textContent = pkState.path || '/';
+    pkCurEl.textContent = pkState.path || '/';
+    pkUpBtn.disabled = pkState.parent === null;
+    pkUpBtn.style.opacity = pkState.parent === null ? '0.3' : '1';
+
+    if (!pkState.entries.length) {
+        pkListEl.innerHTML = `<div class="picker-empty">空目录 — 可以「在此创建」</div>`;
+        return;
+    }
+    pkListEl.innerHTML = pkState.entries.map((e) => `
+        <div class="picker-row" onclick="pkEnter('${esc(e.name)}')">
+            <span class="icon">${PK_ICON_FOLDER}</span>
+            <span class="name">${escHtml(e.name)}</span>
+            <span class="chev">${PK_ICON_CHEV}</span>
+        </div>
+    `).join('');
+}
+
+async function pkLoad(path) {
+    const url = path
+        ? `/api/fs/list?path=${encodeURIComponent(path)}`
+        : `/api/fs/list`;
+    try {
+        const r = await fetch(url);
+        if (!r.ok) {
+            toast(`无法打开: ${path || 'Home'}`);
+            return;
+        }
+        pkState = await r.json();
+        pkRender();
+        pkListEl.scrollTop = 0;
+    } catch (e) {
+        toast(`加载失败: ${e.message}`);
+    }
+}
+
+function pkEnter(name) {
+    const next = pkState.path.replace(/\/$/, '') + '/' + name;
+    pkLoad(next);
+}
+pkUpBtn.onclick = () => pkState.parent !== null && pkLoad(pkState.parent);
+pkHomeBtn.onclick = () => pkLoad(pkState.home || undefined);
+
+async function createSession() {
+    const path = pkState.path;
+    if (!path) { toast('请先选择文件夹'); return; }
+    try {
+        const r = await fetch('/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path }),
+        });
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            const msg = err.error === 'INVALID_PATH' ? '路径不存在或不是目录'
+                      : err.error || `HTTP ${r.status}`;
+            toast(msg);
+            return;
+        }
+        dlg.close();
+        toast('已创建');
+        load();
+    } catch (e) { toast(`创建失败: ${e.message}`); }
+}
+
+function subscribe() {
+    const es = new EventSource('/api/events');
+    es.onmessage = () => load();
+    es.onerror = () => setTimeout(subscribe, 3000);
+}
+
+load();
+subscribe();
+</script>
+</body>
+</html>

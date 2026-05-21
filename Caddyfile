@@ -1,0 +1,43 @@
+# mobile-claude-console v3.1 - Tailscale + 聊天 UI 主线
+#
+# 架构 (v3.1 起):
+#   APK / 浏览器 → http://mac.ts.net:8080 → Caddy → 状态服务(:9999)
+#                                                ↘ spawn `claude -p stream-json` per message
+#
+# 监听 :8080 让 Tailnet 设备能访问 Mac 的 100.x.x.x
+# /term/* 路由仅保留作为「分享 URL」入口 (Phase 1.5 起由状态服务按需 spawn 临时 ttyd)
+# 主线已不再常驻 ttyd
+
+{
+    auto_https off
+}
+
+:8080 {
+    # 终端 → ttyd (仅分享 URL 模式下临时 spawn; 默认 7681 端口可能不在)
+    handle /term/* {
+        reverse_proxy 127.0.0.1:7681
+    }
+
+    # 状态 API + SSE (会话/聊天/审批/tunnel)
+    handle /api/* {
+        reverse_proxy 127.0.0.1:9999 {
+            # 聊天 SSE 流要长时间挂着,关掉读超时
+            transport http {
+                read_timeout 0
+            }
+            flush_interval -1
+        }
+    }
+
+    # 文件浏览 (按 session 解析路径,由状态服务做权限映射)
+    handle /files/* {
+        reverse_proxy 127.0.0.1:9999
+    }
+
+    # 首页 / 聊天页 / 文件页 静态托管
+    handle {
+        root * /Users/caohongwei/Program/mobile-claude-console/web
+        file_server
+        try_files {path} /index.html
+    }
+}

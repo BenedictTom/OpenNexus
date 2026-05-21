@@ -1,0 +1,14 @@
+{
+  "_comment_ntfy": "ntfyTopic 是 ntfy.sh 推送通道随机串, 别人猜到就能看到你的通知; 32-hex 强烈推荐, 见 README",
+  "ntfyTopic": "mcc-REPLACE-WITH-YOUR-32HEX-TOPIC",
+  "ntfyServer": "https://ntfy.sh",
+  "ports": {
+    "ttyd": 7681,
+    "state": 9999,
+    "caddy": 8080
+  },
+  "permissionTimeoutSec": 55,
+
+  "_comment_tailscale": "可选: 如果你在 Mac 装了 Tailscale 并登录, 填 Magic DNS 名(如 mac.tailabcde.ts.net), 启动时 /api/access 会多一条低延迟内网链接; 留空则跳过, 不影响其它功能",
+  "tailscaleHostname": ""
+}

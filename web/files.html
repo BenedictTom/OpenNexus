@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/logo.png">
+<title>文件 · OpenNexus</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<style>
+:root {
+    --bg: #F2F2F7;
+    --bg-elevated: rgba(255,255,255,0.72);
+    --surface: #FFFFFF;
+    --surface-2: #F9F9FB;
+    --label: #000000;
+    --label-2: rgba(60,60,67,0.60);
+    --label-3: rgba(60,60,67,0.30);
+    --separator: rgba(60,60,67,0.18);
+    --accent: #000000;
+    --accent-fg: #FFFFFF;
+    --error: #FF3B30;
+    --code-bg: #1C1C1E;
+    --code-fg: #F2F2F7;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #000000;
+        --bg-elevated: rgba(28,28,30,0.72);
+        --surface: #1C1C1E;
+        --surface-2: #2C2C2E;
+        --label: #FFFFFF;
+        --label-2: rgba(235,235,245,0.60);
+        --label-3: rgba(235,235,245,0.30);
+        --separator: rgba(84,84,88,0.65);
+        --accent: #FFFFFF;
+        --accent-fg: #000000;
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+    }
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overscroll-behavior-y: contain; }
+body {
+    margin: 0;
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif;
+    background: var(--bg);
+    color: var(--label);
+    padding-bottom: env(safe-area-inset-bottom);
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+}
+
+.navbar {
+    position: sticky; top: 0; z-index: 50;
+    padding: max(8px, env(safe-area-inset-top)) 20px 8px;
+    background: var(--bg-elevated);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid transparent;
+    transition: border-color .2s;
+}
+.navbar.scrolled { border-bottom-color: var(--separator); }
+.navbar-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 44px;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand img { width: 36px; height: 36px; image-rendering: pixelated; image-rendering: crisp-edges; }
+.brand-name { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+@media (prefers-color-scheme: dark) { .brand img { filter: invert(1); } }
+.tab {
+    font-size: 13px; color: var(--label-2);
+    background: var(--surface-2);
+    padding: 6px 12px;
+    border-radius: 100px;
+}
+
+.large-title { padding: 4px 20px 6px; }
+.large-title h1 {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    line-height: 1.05;
+}
+
+.chips-wrap {
+    padding: 8px 0 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.chips-wrap::-webkit-scrollbar { display: none; }
+.chips {
+    display: flex; gap: 8px;
+    padding: 0 20px;
+    white-space: nowrap;
+}
+.chip {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    background: var(--surface);
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--label-2);
+    cursor: pointer;
+    user-select: none;
+    box-shadow: var(--shadow-sm);
+    transition: all .15s var(--ease);
+}
+.chip.active {
+    background: var(--accent);
+    color: var(--accent-fg);
+}
+.chip:active { transform: scale(0.96); }
+
+.crumb {
+    padding: 0 20px 10px;
+    font-size: 13px;
+    color: var(--label-2);
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    word-break: break-all;
+}
+
+main { padding: 0 16px 60px; }
+
+.section-list {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+.cell {
+    display: flex; align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface);
+    transition: background .12s;
+    position: relative;
+}
+.cell:active { background: var(--surface-2); }
+.cell + .cell::before {
+    content: ""; position: absolute;
+    top: 0; left: 46px; right: 0;
+    height: 0.5px;
+    background: var(--separator);
+}
+.cell.up { background: transparent; box-shadow: none; }
+.cell.up::before { display: none; }
+
+.cell .icon {
+    width: 24px; height: 24px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--label-2);
+}
+.cell .icon.dir { color: #FFA800; }
+.cell .name {
+    flex: 1;
+    font-size: 15px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cell .size { font-size: 12px; color: var(--label-3); flex-shrink: 0; }
+
+pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 16px;
+    border-radius: var(--radius-md);
+    overflow: auto;
+    font: 12.5px/1.55 ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    white-space: pre;
+    margin: 0;
+}
+
+.empty {
+    text-align: center;
+    padding: 80px 32px 40px;
+    color: var(--label-2);
+}
+.empty .icon-wrap {
+    width: 72px; height: 72px;
+    margin: 0 auto 20px;
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; justify-content: center;
+}
+.empty .icon-wrap svg { width: 32px; height: 32px; color: var(--label-2); }
+.empty h2 {
+    font-size: 20px; font-weight: 600;
+    color: var(--label);
+    margin: 0 0 6px; letter-spacing: -0.3px;
+}
+.empty p { font-size: 14px; margin: 0; }
+
+.banner {
+    margin: 0 16px 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(255,59,48,0.10);
+    color: var(--error);
+    font-size: 13.5px;
+    display: none;
+}
+.banner.show { display: block; }
+
+/* ── 文件预览 ─────────────────────────────────── */
+.preview-bar {
+    position: sticky; top: 60px; z-index: 40;
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-elevated);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 10px;
+}
+.preview-back {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 10px;
+    background: var(--surface-2);
+    border-radius: 8px;
+    font-size: 13px; color: var(--label);
+    cursor: pointer; user-select: none;
+}
+.preview-back:active { transform: scale(0.96); }
+.preview-back svg { width: 16px; height: 16px; }
+.preview-name {
+    flex: 1;
+    font-size: 14px; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.preview-meta { font-size: 12px; color: var(--label-3); flex-shrink: 0; }
+
+.preview-card {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+.preview-card img.full {
+    display: block;
+    width: 100%; height: auto;
+    background: var(--surface-2);
+}
+.preview-card .markdown-body {
+    padding: 18px 18px 24px;
+    font-size: 15px; line-height: 1.65;
+    color: var(--label);
+    word-wrap: break-word;
+}
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+    margin: 1.4em 0 .6em;
+    font-weight: 700; letter-spacing: -0.3px;
+}
+.markdown-body h1 { font-size: 24px; }
+.markdown-body h2 { font-size: 20px; border-bottom: 0.5px solid var(--separator); padding-bottom: 4px; }
+.markdown-body h3 { font-size: 17px; }
+.markdown-body p { margin: .7em 0; }
+.markdown-body a { color: #0A84FF; text-decoration: none; }
+.markdown-body code {
+    background: var(--surface-2);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font: 13px ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+.markdown-body pre {
+    margin: 1em 0;
+    border-radius: 10px;
+    background: var(--code-bg);
+    padding: 14px;
+    overflow-x: auto;
+}
+.markdown-body pre code {
+    background: transparent;
+    padding: 0;
+    color: var(--code-fg);
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+.markdown-body blockquote {
+    margin: .8em 0;
+    padding: 6px 14px;
+    border-left: 3px solid var(--label-3);
+    color: var(--label-2);
+}
+.markdown-body ul, .markdown-body ol { padding-left: 26px; margin: .6em 0; }
+.markdown-body table {
+    border-collapse: collapse; margin: 1em 0;
+    font-size: 13.5px; width: 100%;
+}
+.markdown-body th, .markdown-body td {
+    border: 0.5px solid var(--separator);
+    padding: 6px 10px; text-align: left;
+}
+.markdown-body th { background: var(--surface-2); font-weight: 600; }
+.markdown-body img { max-width: 100%; height: auto; border-radius: 8px; }
+.markdown-body hr { border: none; border-top: 0.5px solid var(--separator); margin: 1.6em 0; }
+
+.preview-card pre.code-block {
+    margin: 0;
+    padding: 16px;
+    background: var(--code-bg);
+    color: var(--code-fg);
+    font: 12.5px/1.55 ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    overflow-x: auto;
+}
+
+.preview-empty {
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--label-2);
+}
+.preview-empty .dl {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 10px 18px;
+    background: var(--accent); color: var(--accent-fg);
+    border-radius: 100px;
+    font-size: 14px; font-weight: 600;
+    text-decoration: none;
+}
+.preview-trunc {
+    margin: 0; padding: 8px 14px;
+    background: rgba(255,168,0,0.12);
+    color: #B26B00;
+    font-size: 12.5px;
+    border-bottom: 0.5px solid var(--separator);
+}
+@media (prefers-color-scheme: dark) {
+    .preview-trunc { color: #FFD479; }
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar" id="navbar">
+    <div class="navbar-inner">
+        <div class="brand">
+            <img src="/logo.png" alt="OpenNexus">
+            <span class="brand-name">OpenNexus</span>
+        </div>
+        <span class="tab">文件</span>
+    </div>
+</nav>
+
+<div class="large-title">
+    <h1>文件</h1>
+</div>
+
+<div class="chips-wrap"><div class="chips" id="chips"></div></div>
+<div class="crumb" id="crumb">/</div>
+<div class="banner" id="banner"></div>
+<main id="list"></main>
+
+<script>
+const chipsEl = document.getElementById('chips');
+const crumbEl = document.getElementById('crumb');
+const listEl = document.getElementById('list');
+const bannerEl = document.getElementById('banner');
+const navbar = document.getElementById('navbar');
+let currentSession = '';
+let currentPath = '';
+let currentFile = null;
+
+window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 4);
+}, { passive: true });
+
+function escHtml(s) { return String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+function esc(s) { return String(s).replace(/'/g, "\\'"); }
+function showBanner(msg) {
+    if (msg) { bannerEl.textContent = msg; bannerEl.classList.add('show'); }
+    else bannerEl.classList.remove('show');
+}
+function formatSize(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+// SVG icons (单色, 与设计统一)
+const ICON_FOLDER = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6a2 2 0 0 1 2-2h3.6a2 2 0 0 1 1.4.6L12.4 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>`;
+const ICON_FILE   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><polyline points="14 3 14 8 19 8"/></svg>`;
+const ICON_CODE   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><polyline points="15 7 20 12 15 17"/></svg>`;
+const ICON_IMG    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.4" fill="currentColor"/><polyline points="4 17 9 13 14 17 20 12"/></svg>`;
+const ICON_UP     = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`;
+
+function iconFor(name, type) {
+    if (type === 'dir') return { svg: ICON_FOLDER, cls: 'dir' };
+    const ext = name.split('.').pop().toLowerCase();
+    if (['js','ts','tsx','jsx','py','go','rs','java','kt','swift','sh','html','css','json','yaml','yml','toml','md','vue'].includes(ext))
+        return { svg: ICON_CODE, cls: '' };
+    if (['png','jpg','jpeg','gif','svg','webp','heic'].includes(ext))
+        return { svg: ICON_IMG, cls: '' };
+    return { svg: ICON_FILE, cls: '' };
+}
+
+async function loadSessions() {
+    try {
+        const r = await fetch('/api/sessions');
+        const data = await r.json();
+        showBanner('');
+        if (!data.length) {
+            chipsEl.innerHTML = '';
+            listEl.innerHTML = emptyHtml('📂', '还没有会话', '先去「会话」Tab 创建一个');
+            return;
+        }
+        chipsEl.innerHTML = data.map(s =>
+            `<div class="chip ${s.name === currentSession ? 'active' : ''}" onclick="pickSession('${esc(s.name)}')">${escHtml(s.name)}</div>`
+        ).join('');
+        if (!currentSession) { currentSession = data[0].name; loadDir(''); }
+    } catch (e) {
+        showBanner(`无法连接状态服务: ${e.message}`);
+    }
+}
+
+function emptyHtml(emoji, title, sub) {
+    return `
+    <div class="empty">
+        <div class="icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h3.6L12 6h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>
+        </div>
+        <h2>${title}</h2>
+        <p>${sub}</p>
+    </div>`;
+}
+
+function pickSession(name) {
+    currentSession = name;
+    document.querySelectorAll('.chip').forEach(c => {
+        c.classList.toggle('active', c.textContent === name);
+    });
+    loadDir('');
+}
+
+async function loadDir(sub) {
+    if (!currentSession) return;
+    currentPath = sub;
+    currentFile = null;
+    crumbEl.textContent = '/' + sub;
+    try {
+        const r = await fetch(`/files/${encodeURIComponent(currentSession)}/${sub}`);
+        const data = await r.json();
+        if (data.type === 'file') {
+            // 进入文件预览, currentPath 设到文件路径以便"返回"回上级目录
+            currentPath = data.path || sub;
+            return renderFile(data);
+        }
+        renderDir(data, sub);
+    } catch (e) {
+        listEl.innerHTML = emptyHtml('', '加载失败', escHtml(e.message));
+    }
+}
+
+function renderDir(data, sub) {
+    const entries = data.entries || [];
+    const upBtn = sub
+        ? `<div class="cell up" onclick="up()"><span class="icon">${ICON_UP}</span><span class="name">返回上级</span></div>`
+        : '';
+    if (!entries.length && !sub) {
+        listEl.innerHTML = upBtn + emptyHtml('', '空目录', '');
+        return;
+    }
+    const items = entries.map(e => {
+        const next = sub ? `${sub}/${e.name}` : e.name;
+        const ic = iconFor(e.name, e.type);
+        return `
+            <div class="cell" onclick="loadDir('${esc(next)}')">
+                <span class="icon ${ic.cls}">${ic.svg}</span>
+                <span class="name">${escHtml(e.name)}</span>
+                ${e.type === 'file' ? `<span class="size">${formatSize(e.size)}</span>` : ''}
+            </div>`;
+    }).join('');
+    listEl.innerHTML = upBtn + `<div class="section-list">${items}</div>`;
+}
+
+function up() {
+    const parts = currentPath.split('/'); parts.pop();
+    loadDir(parts.join('/'));
+}
+
+// ── 文件预览 ──────────────────────────────────────────────
+// 分发器: image / markdown / code / text / binary
+const CODE_LANGS = {
+    js: 'javascript', mjs: 'javascript', cjs: 'javascript',
+    ts: 'typescript', tsx: 'tsx', jsx: 'jsx',
+    py: 'python', rb: 'ruby', go: 'go', rs: 'rust',
+    java: 'java', kt: 'kotlin', kts: 'kotlin', scala: 'scala', swift: 'swift',
+    c: 'c', cc: 'cpp', cpp: 'cpp', h: 'c', hpp: 'cpp', m: 'objectivec', mm: 'objectivec',
+    html: 'markup', htm: 'markup', xml: 'markup', svg: 'markup', vue: 'markup', astro: 'markup',
+    css: 'css', scss: 'scss', sass: 'sass', less: 'less',
+    json: 'json', yaml: 'yaml', yml: 'yaml', toml: 'toml',
+    sh: 'bash', bash: 'bash', zsh: 'bash', fish: 'bash', ps1: 'powershell',
+    sql: 'sql', graphql: 'graphql', proto: 'protobuf',
+    dockerfile: 'docker', makefile: 'makefile',
+};
+
+function langOf(name, ext) {
+    if (CODE_LANGS[ext]) return CODE_LANGS[ext];
+    const lower = name.toLowerCase();
+    if (lower === 'dockerfile') return 'docker';
+    if (lower === 'makefile') return 'makefile';
+    return null;
+}
+
+function previewBar(name, sub, meta) {
+    return `
+    <div class="preview-bar">
+        <div class="preview-back" onclick="closeFile()">
+            ${ICON_UP}<span>返回</span>
+        </div>
+        <div class="preview-name">${escHtml(name)}</div>
+        <div class="preview-meta">${meta}</div>
+    </div>`;
+}
+
+function rawUrl(sub) {
+    return `/files/${encodeURIComponent(currentSession)}/${sub}?raw=1`;
+}
+
+function renderFile(data) {
+    currentFile = data.path;
+    crumbEl.textContent = '/' + data.path;
+    const bar = previewBar(data.name, data.path, formatSize(data.bytes));
+    const trunc = data.truncated
+        ? `<p class="preview-trunc">⚠️ 文件超 512KB，仅显示前 512KB</p>` : '';
+
+    // 1) 图片
+    if (data.kind === 'image') {
+        listEl.innerHTML = bar + `
+            <div class="preview-card">
+                <img class="full" src="${rawUrl(data.path)}" alt="${escHtml(data.name)}">
+            </div>`;
+        return;
+    }
+
+    // 2) 二进制 - 下载兜底
+    if (data.kind === 'binary') {
+        listEl.innerHTML = bar + `
+            <div class="preview-card">
+                <div class="preview-empty">
+                    <p>无法预览此类型(${escHtml(data.ext || '未知扩展名')})</p>
+                    <p style="font-size:12px;color:var(--label-3)">大小: ${formatSize(data.bytes)}</p>
+                    <a class="dl" href="${rawUrl(data.path)}" download="${escHtml(data.name)}">下载</a>
+                </div>
+            </div>`;
+        return;
+    }
+
+    // 3) Markdown - marked 渲染 + 代码块 prism 高亮
+    if (data.ext === 'md' || data.ext === 'markdown') {
+        const html = window.marked
+            ? window.marked.parse(data.content || '')
+            : `<pre>${escHtml(data.content || '')}</pre>`;
+        listEl.innerHTML = bar + `
+            <div class="preview-card">
+                ${trunc}
+                <div class="markdown-body">${html}</div>
+            </div>`;
+        // marked 输出里的 <pre><code class="language-xxx"> 让 prism 自动识别
+        if (window.Prism) window.Prism.highlightAllUnder(listEl);
+        return;
+    }
+
+    // 4) 代码 - prism 高亮
+    const lang = langOf(data.name, data.ext);
+    if (lang) {
+        listEl.innerHTML = bar + `
+            <div class="preview-card">
+                ${trunc}
+                <pre class="code-block"><code class="language-${lang}">${escHtml(data.content || '')}</code></pre>
+            </div>`;
+        if (window.Prism) window.Prism.highlightAllUnder(listEl);
+        return;
+    }
+
+    // 5) 纯文本兜底
+    listEl.innerHTML = bar + `
+        <div class="preview-card">
+            ${trunc}
+            <pre class="code-block">${escHtml(data.content || '')}</pre>
+        </div>`;
+}
+
+function closeFile() {
+    currentFile = null;
+    // 回到当前所在目录(去掉文件名段)
+    const parts = currentPath.split('/'); parts.pop();
+    loadDir(parts.join('/'));
+}
+
+loadSessions();
+</script>
+</body>
+</html>

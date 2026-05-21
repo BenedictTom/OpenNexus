@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Claude Console</string>
+    <string name="tab_sessions">会话</string>
+    <string name="tab_terminal">终端</string>
+    <string name="tab_files">文件</string>
+    <string name="config_title">首次配置</string>
+    <string name="config_host_label">Mac 主机 (Tailscale MagicDNS 名或 IP)</string>
+    <string name="config_port_label">端口</string>
+    <string name="config_ntfy_topic_label">ntfy topic</string>
+    <string name="config_ntfy_server_label">ntfy server (默认 https://ntfy.sh)</string>
+    <string name="config_save">保存</string>
+    <string name="config_test">测试连接</string>
+    <string name="notify_channel_approval">审批请求</string>
+    <string name="notify_channel_event">通知</string>
+    <string name="notify_channel_service">后台服务</string>
+</resources>

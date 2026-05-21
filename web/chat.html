@@ -1,0 +1,1574 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/logo.png">
+<title>Claude · 聊天</title>
+
+<!-- 三方依赖: Markdown + 代码高亮 -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-tomorrow.min.css">
+<script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-typescript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-jsx.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-tsx.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-json.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-go.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-rust.min.js"></script>
+
+<style>
+/* ─── iOS 风设计 token (与 index.html 对齐) ──────────────── */
+:root {
+    --bg: #F2F2F7;
+    --bg-elevated: rgba(255,255,255,0.72);
+    --surface: #FFFFFF;
+    --surface-2: #F2F2F7;
+    --surface-3: #E5E5EA;
+    --label: #000000;
+    --label-2: rgba(60,60,67,0.60);
+    --label-3: rgba(60,60,67,0.30);
+    --separator: rgba(60,60,67,0.18);
+    --accent: #000000;
+    --accent-fg: #FFFFFF;
+    --bubble-user-bg: #000000;
+    --bubble-user-fg: #FFFFFF;
+    --bubble-assistant-bg: #FFFFFF;
+    --bubble-assistant-fg: #000000;
+    --bubble-tool-bg: #F2F2F7;
+    --bubble-tool-fg: #3C3C43;
+    --success: #34C759;
+    --warning: #FF9500;
+    --error: #FF3B30;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 22px;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #000000;
+        --bg-elevated: rgba(28,28,30,0.72);
+        --surface: #1C1C1E;
+        --surface-2: #2C2C2E;
+        --surface-3: #3A3A3C;
+        --label: #FFFFFF;
+        --label-2: rgba(235,235,245,0.60);
+        --label-3: rgba(235,235,245,0.30);
+        --separator: rgba(84,84,88,0.65);
+        --accent: #FFFFFF;
+        --accent-fg: #000000;
+        --bubble-user-bg: #FFFFFF;
+        --bubble-user-fg: #000000;
+        --bubble-assistant-bg: #1C1C1E;
+        --bubble-assistant-fg: #FFFFFF;
+        --bubble-tool-bg: #2C2C2E;
+        --bubble-tool-fg: #EBEBF5;
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+        --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+    }
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+    height: 100%;
+    overscroll-behavior-y: contain;
+}
+body {
+    margin: 0;
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--label);
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ─── 顶部 navbar ──────────────────────────────────────────── */
+.navbar {
+    flex-shrink: 0;
+    padding: max(8px, env(safe-area-inset-top)) 12px 8px;
+    background: var(--bg-elevated);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--separator);
+    z-index: 50;
+}
+.navbar-inner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 44px;
+}
+.nav-btn {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 0;
+    background: transparent;
+    color: var(--label);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background .15s, transform .12s var(--ease);
+}
+.nav-btn:active { background: var(--surface-2); transform: scale(0.92); }
+.nav-title {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    padding: 0 4px;
+}
+.nav-title .name {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nav-title .sub {
+    font-size: 11px;
+    color: var(--label-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+.nav-title .sub.busy::before {
+    content: "● ";
+    color: var(--warning);
+    animation: blink 1s ease-in-out infinite;
+}
+@keyframes blink { 50% { opacity: 0.3; } }
+
+/* ─── 消息列表 ────────────────────────────────────────────── */
+main {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 12px 12px;
+    scroll-padding-bottom: 12px;
+}
+
+.msg-row {
+    display: flex;
+    margin-bottom: 10px;
+    animation: msg-in .25s var(--ease);
+}
+@keyframes msg-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.msg-row.user { justify-content: flex-end; }
+.msg-row.assistant { justify-content: flex-start; }
+
+.bubble {
+    max-width: 84%;
+    padding: 10px 14px;
+    border-radius: var(--radius-xl);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.5;
+    box-shadow: var(--shadow-sm);
+}
+.bubble.user {
+    background: var(--bubble-user-bg);
+    color: var(--bubble-user-fg);
+    border-bottom-right-radius: 6px;
+    white-space: pre-wrap;
+}
+.bubble.assistant {
+    background: var(--bubble-assistant-bg);
+    color: var(--bubble-assistant-fg);
+    border-bottom-left-radius: 6px;
+}
+
+/* Markdown 排版 */
+.md > *:first-child { margin-top: 0; }
+.md > *:last-child { margin-bottom: 0; }
+.md p { margin: 0.5em 0; }
+.md h1, .md h2, .md h3 { margin: 0.7em 0 0.4em; line-height: 1.25; letter-spacing: -0.3px; }
+.md h1 { font-size: 1.35em; }
+.md h2 { font-size: 1.2em; }
+.md h3 { font-size: 1.08em; }
+.md ul, .md ol { padding-left: 1.4em; margin: 0.5em 0; }
+.md li { margin: 0.25em 0; }
+.md blockquote {
+    margin: 0.5em 0;
+    padding: 0.3em 0.9em;
+    border-left: 3px solid var(--label-3);
+    color: var(--label-2);
+}
+.md code:not(pre code) {
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: 0.86em;
+}
+.md pre {
+    margin: 0.6em 0;
+    padding: 12px 14px;
+    background: #2d2d2d !important;
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.md pre code {
+    background: transparent !important;
+    padding: 0;
+    color: #ccc;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+.md a { color: inherit; text-decoration: underline; }
+.md hr { border: 0; border-top: 0.5px solid var(--separator); margin: 1em 0; }
+.md table {
+    border-collapse: collapse;
+    margin: 0.5em 0;
+    font-size: 0.92em;
+}
+.md th, .md td {
+    border: 0.5px solid var(--separator);
+    padding: 4px 8px;
+    text-align: left;
+}
+
+/* ─── tool_use / tool_result 折叠卡片 ───────────────────── */
+.tool-card {
+    align-self: flex-start;
+    max-width: 84%;
+    margin-bottom: 10px;
+    background: var(--bubble-tool-bg);
+    color: var(--bubble-tool-fg);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border: 0.5px solid var(--separator);
+}
+.tool-row {
+    display: flex;
+    align-items: center;
+}
+.tool-head {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 13px;
+    min-width: 0;
+}
+.tool-head .tool-icon {
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: var(--label-2);
+    font-weight: 600;
+}
+.tool-head .tool-name {
+    font-weight: 600;
+    color: var(--label);
+}
+.tool-head .tool-summary {
+    color: var(--label-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    flex: 1;
+    min-width: 0;
+}
+.tool-head .chev {
+    flex-shrink: 0;
+    color: var(--label-3);
+    transition: transform .2s var(--ease);
+}
+.tool-card.open .chev { transform: rotate(90deg); }
+.tool-body {
+    display: none;
+    padding: 4px 12px 10px;
+    border-top: 0.5px solid var(--separator);
+}
+.tool-card.open .tool-body { display: block; }
+.tool-body pre {
+    margin: 6px 0 0;
+    padding: 10px;
+    background: var(--surface);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-x: auto;
+    color: var(--label);
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 320px;
+}
+.tool-body .label {
+    font-size: 11px;
+    color: var(--label-2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 6px;
+    font-weight: 600;
+}
+.tool-body .label:first-child { margin-top: 0; }
+.tool-card.error .tool-icon {
+    background: rgba(255,59,48,0.15);
+    color: var(--error);
+}
+
+/* ─── 加载/typing 指示器 ────────────────────────────────── */
+.typing {
+    align-self: flex-start;
+    background: var(--bubble-assistant-bg);
+    color: var(--label-2);
+    padding: 12px 16px;
+    border-radius: var(--radius-xl);
+    border-bottom-left-radius: 6px;
+    display: inline-flex;
+    gap: 4px;
+    box-shadow: var(--shadow-sm);
+}
+.typing span {
+    width: 6px; height: 6px;
+    background: var(--label-2);
+    border-radius: 50%;
+    animation: typing 1.2s ease-in-out infinite;
+}
+.typing span:nth-child(2) { animation-delay: 0.15s; }
+.typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typing {
+    0%, 100% { opacity: 0.3; transform: translateY(0); }
+    50%      { opacity: 1;   transform: translateY(-2px); }
+}
+
+/* ─── 空状态 ──────────────────────────────────────────────── */
+.empty {
+    text-align: center;
+    padding: 60px 32px 0;
+    color: var(--label-2);
+}
+.empty .icon-wrap {
+    width: 64px; height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; justify-content: center;
+}
+.empty .icon-wrap svg { width: 28px; height: 28px; color: var(--label-2); }
+.empty h2 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--label);
+    margin: 0 0 4px;
+}
+.empty p { font-size: 13.5px; margin: 0; line-height: 1.5; }
+
+/* ─── 错误条 ─────────────────────────────────────────────── */
+.err-bubble {
+    align-self: center;
+    background: rgba(255,59,48,0.12);
+    color: var(--error);
+    padding: 8px 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    margin-bottom: 10px;
+    max-width: 90%;
+    white-space: pre-wrap;
+}
+
+/* ─── 底部输入栏 ─────────────────────────────────────────── */
+.composer {
+    flex-shrink: 0;
+    padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+    background: var(--bg-elevated);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 0.5px solid var(--separator);
+}
+.composer-inner {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    background: var(--surface);
+    border-radius: 22px;
+    padding: 6px 6px 6px 14px;
+    box-shadow: var(--shadow-sm);
+    min-height: 38px;
+}
+.composer textarea {
+    flex: 1;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--label);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.4;
+    resize: none;
+    padding: 6px 0;
+    max-height: 160px;
+    min-height: 24px;
+}
+.composer textarea::placeholder { color: var(--label-2); }
+.send-btn {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 0;
+    background: var(--accent);
+    color: var(--accent-fg);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform .12s var(--ease), opacity .15s;
+}
+.send-btn:disabled {
+    background: var(--surface-3);
+    color: var(--label-3);
+    cursor: not-allowed;
+}
+.send-btn:not(:disabled):active { transform: scale(0.9); }
+.send-btn.stop {
+    background: var(--error);
+}
+
+/* ─── toast ──────────────────────────────────────────────── */
+.toast {
+    position: fixed;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(20,20,22,0.92);
+    color: white;
+    padding: 10px 18px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s var(--ease), transform .25s var(--ease);
+    backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-md);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── 文件抽屉 (左侧滑出, 树形) ────────────────────────── */
+.fp-backdrop {
+    position: fixed; inset: 0; z-index: 80;
+    background: rgba(0,0,0,0);
+    pointer-events: none;
+    transition: background .25s var(--ease);
+}
+.fp-backdrop.open {
+    background: rgba(0,0,0,0.4);
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+.fp-drawer {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: min(360px, 82vw);
+    z-index: 81;
+    background: var(--surface);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+    transform: translateX(100%);
+    transition: transform .28s var(--ease);
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.fp-drawer.open { transform: translateX(0); }
+
+.fp-head {
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: 6px;
+    padding: 12px 14px 10px;
+    border-bottom: 0.5px solid var(--separator);
+    background: var(--bg-elevated);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+.fp-head .title {
+    flex: 1;
+    font-size: 15px; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fp-head .root {
+    font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--label-3);
+    margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    direction: rtl; text-align: left;
+}
+.fp-close {
+    width: 32px; height: 32px;
+    border: 0; background: transparent;
+    border-radius: 50%;
+    color: var(--label-2);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.fp-close:active { background: var(--surface-2); }
+
+.fp-tree {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 0 14px;
+}
+.fp-node {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 12px;
+    cursor: pointer; user-select: none;
+    font-size: 14px;
+    color: var(--label);
+    border-radius: 8px;
+    margin: 0 6px;
+    transition: background .12s;
+}
+.fp-node:active { background: var(--surface-2); }
+.fp-node .chev {
+    width: 14px; height: 14px;
+    flex-shrink: 0;
+    color: var(--label-3);
+    transition: transform .15s;
+}
+.fp-node.expanded .chev { transform: rotate(90deg); color: var(--label-2); }
+.fp-node .ico { width: 16px; height: 16px; flex-shrink: 0; }
+.fp-node .ico.dir { color: #FFA800; }
+.fp-node .ico.file { color: var(--label-2); }
+.fp-node .name {
+    flex: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fp-node.file .chev { visibility: hidden; }
+.fp-children {
+    border-left: 0.5px solid var(--separator);
+    margin-left: 18px;
+    padding-left: 0;
+}
+.fp-children .fp-node { margin-left: 2px; margin-right: 6px; }
+.fp-loading, .fp-error {
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: var(--label-2);
+}
+.fp-error { color: var(--error); }
+
+/* ─── 文件预览 (全屏覆盖) ─────────────────────────────── */
+dialog#filePreview {
+    border: 0; padding: 0; margin: 0;
+    width: 100vw; height: 100vh;
+    max-width: 100vw; max-height: 100vh;
+    background: var(--bg);
+    color: var(--label);
+}
+dialog#filePreview::backdrop { background: rgba(0,0,0,0.5); }
+.fpv-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: max(10px, env(safe-area-inset-top)) 14px 10px;
+    background: var(--bg-elevated);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--separator);
+    position: sticky; top: 0; z-index: 5;
+}
+.fpv-back {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 0; background: transparent;
+    color: var(--label);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.fpv-back:active { background: var(--surface-2); }
+.fpv-name { flex: 1; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fpv-meta { font-size: 12px; color: var(--label-3); flex-shrink: 0; }
+.fpv-body {
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom));
+}
+.fpv-trunc {
+    margin: 0 0 10px; padding: 8px 12px;
+    background: rgba(255,168,0,0.12);
+    color: #B26B00;
+    font-size: 12.5px;
+    border-radius: 8px;
+}
+@media (prefers-color-scheme: dark) {
+    .fpv-trunc { color: #FFD479; }
+}
+.fpv-card {
+    background: var(--surface);
+    border-radius: var(--radius-md, 14px);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.06));
+    overflow: hidden;
+}
+.fpv-card img.full { display: block; width: 100%; height: auto; background: var(--surface-2); }
+.fpv-card pre.code {
+    margin: 0; padding: 16px;
+    background: #1C1C1E; color: #F2F2F7;
+    font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+    overflow-x: auto;
+}
+.fpv-card .md { padding: 16px 18px; font-size: 15px; line-height: 1.65; word-wrap: break-word; }
+.fpv-card .md h1, .fpv-card .md h2, .fpv-card .md h3 { margin: 1.3em 0 .5em; font-weight: 700; letter-spacing: -.3px; }
+.fpv-card .md h1 { font-size: 22px; }
+.fpv-card .md h2 { font-size: 19px; border-bottom: 0.5px solid var(--separator); padding-bottom: 4px; }
+.fpv-card .md h3 { font-size: 16px; }
+.fpv-card .md p { margin: .6em 0; }
+.fpv-card .md code { background: var(--surface-2); padding: 2px 5px; border-radius: 4px; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.fpv-card .md pre { background: #1C1C1E; color: #F2F2F7; padding: 14px; border-radius: 10px; overflow-x: auto; }
+.fpv-card .md pre code { background: transparent; padding: 0; color: inherit; font-size: 12.5px; line-height: 1.55; }
+.fpv-card .md a { color: #0A84FF; text-decoration: none; }
+.fpv-card .md blockquote { margin: .8em 0; padding: 6px 14px; border-left: 3px solid var(--label-3); color: var(--label-2); }
+.fpv-card .md table { border-collapse: collapse; margin: 1em 0; font-size: 13.5px; width: 100%; }
+.fpv-card .md th, .fpv-card .md td { border: 0.5px solid var(--separator); padding: 6px 10px; text-align: left; }
+.fpv-card .md th { background: var(--surface-2); font-weight: 600; }
+.fpv-card .md img { max-width: 100%; height: auto; border-radius: 8px; }
+.fpv-empty { padding: 40px 24px; text-align: center; color: var(--label-2); }
+.fpv-empty .dl {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 10px 18px;
+    background: var(--label); color: var(--bg);
+    border-radius: 100px;
+    font-size: 14px; font-weight: 600;
+    text-decoration: none;
+}
+
+/* ─── 分享弹窗 ──────────────────────────────────────────── */
+dialog#shareDlg {
+    border: none;
+    border-radius: 18px;
+    padding: 0;
+    width: min(420px, calc(100vw - 32px));
+    background: var(--surface);
+    color: var(--label);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+dialog#shareDlg::backdrop { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+.share-head {
+    padding: 18px 20px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.share-head h3 { margin: 0; font-size: 17px; font-weight: 700; }
+.share-close {
+    background: var(--surface-2);
+    border: none;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    color: var(--label-2);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.share-body { padding: 8px 20px 18px; }
+.share-status {
+    font-size: 13px;
+    color: var(--label-2);
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
+}
+.share-status .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--label-3);
+}
+.share-status.active .dot { background: #34c759; box-shadow: 0 0 0 3px rgba(52,199,89,0.18); }
+.share-url {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    word-break: break-all;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    user-select: all;
+    -webkit-user-select: all;
+    color: var(--label);
+    max-height: 100px;
+    overflow-y: auto;
+}
+.share-warn {
+    background: rgba(255,149,0,0.10);
+    border-left: 3px solid #ff9500;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--label);
+    margin-bottom: 16px;
+}
+.share-actions {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+}
+.share-actions .row { display: flex; gap: 10px; }
+.share-btn {
+    flex: 1;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .1s var(--ease), background .15s var(--ease);
+}
+.share-btn:active:not(:disabled) { transform: scale(0.97); }
+.share-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.share-btn.primary { background: var(--label); color: var(--bg); }
+.share-btn.danger { background: rgba(255,59,48,0.12); color: var(--error); }
+.share-btn.muted { background: var(--surface-2); color: var(--label); }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-inner">
+        <button class="nav-btn" onclick="goBack()" aria-label="返回">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="13,5 7,11 13,17"/>
+            </svg>
+        </button>
+        <div class="nav-title">
+            <div class="name" id="navName">…</div>
+            <div class="sub" id="navSub"></div>
+        </div>
+        <button class="nav-btn" onclick="openShareDialog()" aria-label="分享">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 2v10"/>
+                <polyline points="6,6 10,2 14,6"/>
+                <path d="M4 10v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/>
+            </svg>
+        </button>
+        <button class="nav-btn" onclick="openFilesPanel()" aria-label="文件">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+                <path d="M3 5a1.5 1.5 0 0 1 1.5-1.5h3a1.5 1.5 0 0 1 1.1.5l1 1.1H15.5A1.5 1.5 0 0 1 17 6.6V14a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14z"/>
+            </svg>
+        </button>
+    </div>
+</nav>
+
+<main id="messages">
+    <div class="empty" id="empty">
+        <div class="icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+        </div>
+        <h2>开始和 Claude 聊天</h2>
+        <p>在下方输入框写下你的问题或任务</p>
+    </div>
+</main>
+
+<form class="composer" id="composerForm" onsubmit="event.preventDefault(); onSendOrStop()">
+    <div class="composer-inner">
+        <textarea id="input" placeholder="发消息给 Claude..." rows="1" autocomplete="off"></textarea>
+        <button type="submit" class="send-btn" id="sendBtn" disabled aria-label="发送">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="sendIcon">
+                <line x1="8" y1="13" x2="8" y2="3"/>
+                <polyline points="3,8 8,3 13,8"/>
+            </svg>
+        </button>
+    </div>
+</form>
+
+<div class="toast" id="toast"></div>
+
+<!-- 文件抽屉 (左侧滑出, 树形) -->
+<div class="fp-backdrop" id="fpBackdrop" onclick="closeFilesPanel()"></div>
+<aside class="fp-drawer" id="fpDrawer" aria-hidden="true">
+    <div class="fp-head">
+        <button class="fp-close" onclick="closeFilesPanel()" aria-label="关闭">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/>
+            </svg>
+        </button>
+        <div style="flex:1;min-width:0;">
+            <div class="title">文件</div>
+            <div class="root" id="fpRoot" dir="rtl">—</div>
+        </div>
+    </div>
+    <div class="fp-tree" id="fpTree"><div class="fp-loading">加载中…</div></div>
+</aside>
+
+<!-- 文件预览 (全屏覆盖) -->
+<dialog id="filePreview">
+    <div class="fpv-bar">
+        <button class="fpv-back" onclick="closeFilePreview()" aria-label="返回">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="13,5 7,11 13,17"/>
+            </svg>
+        </button>
+        <div class="fpv-name" id="fpvName">—</div>
+        <div class="fpv-meta" id="fpvMeta"></div>
+    </div>
+    <div class="fpv-body" id="fpvBody"></div>
+</dialog>
+
+<dialog id="shareDlg">
+    <div class="share-head">
+        <h3>分享终端</h3>
+        <button type="button" class="share-close" onclick="closeShareDlg()" aria-label="关闭">✕</button>
+    </div>
+    <div class="share-body">
+        <div class="share-status" id="shareStatus"><span class="dot"></span><span id="shareStatusText">加载中…</span></div>
+        <div class="share-url" id="shareUrl" style="display:none"></div>
+        <div class="share-warn">
+            ⚠️ 拿到链接的人可以在网页里直接操作这个 Claude 终端（输入命令、读文件、改代码）。仅分享给信任的人，用完请及时关闭。
+        </div>
+        <div class="share-actions" id="shareActions"></div>
+    </div>
+</dialog>
+
+<script>
+const params = new URLSearchParams(location.search);
+const sessionName = params.get('name') || '';
+const messagesEl = document.getElementById('messages');
+const emptyEl = document.getElementById('empty');
+const navName = document.getElementById('navName');
+const navSub = document.getElementById('navSub');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+const sendIcon = document.getElementById('sendIcon');
+const toastEl = document.getElementById('toast');
+
+let sessionMeta = null;
+let isStreaming = false;
+let currentReader = null;       // 当前 SSE fetch reader, 用于中断
+let currentAssistantEl = null;  // 当前正在流式追加的 assistant 气泡
+let currentAssistantText = '';  // 已累积的 assistant 文本(用于增量 marked 渲染)
+let toolCardMap = new Map();    // tool_use_id → tool card DOM, 用于回填 tool_result
+
+if (!sessionName) {
+    location.href = '/';
+}
+
+// ─── marked 配置 ─────────────────────────────────────────
+if (typeof marked !== 'undefined') {
+    marked.setOptions({
+        breaks: true,
+        gfm: true,
+        highlight: function(code, lang) {
+            if (window.Prism && Prism.languages[lang]) {
+                try { return Prism.highlight(code, Prism.languages[lang], lang); }
+                catch { return code; }
+            }
+            return code;
+        }
+    });
+}
+
+// ─── 工具函数 ────────────────────────────────────────────
+function escHtml(s) {
+    return String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+}
+function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+function goBack() {
+    if (history.length > 1) history.back();
+    else location.href = '/';
+}
+function scrollToBottom(smooth = true) {
+    requestAnimationFrame(() => {
+        messagesEl.scrollTo({
+            top: messagesEl.scrollHeight,
+            behavior: smooth ? 'smooth' : 'auto',
+        });
+    });
+}
+function renderMarkdown(text) {
+    if (typeof marked === 'undefined') return escHtml(text);
+    try { return marked.parse(text); } catch { return escHtml(text); }
+}
+function highlightWithin(el) {
+    if (window.Prism) Prism.highlightAllUnder(el);
+}
+
+// ─── 渲染函数 ────────────────────────────────────────────
+function clearEmpty() {
+    if (emptyEl && emptyEl.parentNode) emptyEl.remove();
+}
+
+function appendUserBubble(text) {
+    clearEmpty();
+    const row = document.createElement('div');
+    row.className = 'msg-row user';
+    const bub = document.createElement('div');
+    bub.className = 'bubble user';
+    bub.textContent = text;
+    row.appendChild(bub);
+    messagesEl.appendChild(row);
+    scrollToBottom();
+}
+
+function startAssistantBubble() {
+    clearEmpty();
+    const row = document.createElement('div');
+    row.className = 'msg-row assistant';
+    const bub = document.createElement('div');
+    bub.className = 'bubble assistant md';
+    row.appendChild(bub);
+    messagesEl.appendChild(row);
+    currentAssistantEl = bub;
+    currentAssistantText = '';
+    scrollToBottom();
+    return bub;
+}
+
+function appendAssistantText(text) {
+    if (!currentAssistantEl) startAssistantBubble();
+    currentAssistantText += text;
+    currentAssistantEl.innerHTML = renderMarkdown(currentAssistantText);
+    highlightWithin(currentAssistantEl);
+    scrollToBottom(false);
+}
+
+function finalizeAssistantBubble() {
+    currentAssistantEl = null;
+    currentAssistantText = '';
+}
+
+function shortSummary(name, input) {
+    if (!input) return '';
+    if (name === 'Bash') return '$ ' + String(input.command || '').slice(0, 200);
+    if (name === 'Edit' || name === 'Write' || name === 'Read' || name === 'MultiEdit') {
+        return String(input.file_path || '');
+    }
+    if (name === 'Grep') return 'grep ' + String(input.pattern || '');
+    if (name === 'Glob') return String(input.pattern || '');
+    if (name === 'TodoWrite') return (input.todos ? input.todos.length + ' 项' : '');
+    try { return JSON.stringify(input).slice(0, 120); } catch { return ''; }
+}
+
+function appendToolCard(toolUse) {
+    clearEmpty();
+    finalizeAssistantBubble();  // tool_use 中断 text 累积
+    const card = document.createElement('div');
+    card.className = 'tool-card';
+    card.dataset.toolId = toolUse.id;
+
+    const head = document.createElement('div');
+    head.className = 'tool-head';
+    head.innerHTML = `
+        <div class="tool-icon">${escHtml(toolUse.name.slice(0, 2))}</div>
+        <div style="display:flex;flex-direction:column;min-width:0;flex:1;">
+            <div class="tool-name">${escHtml(toolUse.name)}</div>
+            <div class="tool-summary">${escHtml(shortSummary(toolUse.name, toolUse.input))}</div>
+        </div>
+        <svg class="chev" width="10" height="14" viewBox="0 0 10 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3,2 8,7 3,12"/>
+        </svg>`;
+    head.onclick = () => card.classList.toggle('open');
+
+    const body = document.createElement('div');
+    body.className = 'tool-body';
+    let bodyHtml = `<div class="label">参数</div><pre>${escHtml(JSON.stringify(toolUse.input, null, 2))}</pre>`;
+    body.innerHTML = bodyHtml;
+
+    card.appendChild(head);
+    card.appendChild(body);
+    messagesEl.appendChild(card);
+    toolCardMap.set(toolUse.id, { card, body });
+    scrollToBottom();
+}
+
+function fillToolResult(result) {
+    const entry = toolCardMap.get(result.toolUseId);
+    if (!entry) return;
+    if (result.isError) entry.card.classList.add('error');
+    const html = `<div class="label">结果${result.isError ? ' (错误)' : ''}</div><pre>${escHtml(String(result.content || '').slice(0, 8000))}</pre>`;
+    entry.body.innerHTML += html;
+}
+
+function appendError(msg) {
+    clearEmpty();
+    finalizeAssistantBubble();
+    const el = document.createElement('div');
+    el.className = 'err-bubble';
+    el.textContent = msg;
+    messagesEl.appendChild(el);
+    scrollToBottom();
+}
+
+function setBusy(busy) {
+    isStreaming = busy;
+    navSub.classList.toggle('busy', busy);
+    navSub.textContent = busy
+        ? '思考中...'
+        : (sessionMeta ? sessionMeta.path : '');
+    if (busy) {
+        sendBtn.disabled = false;
+        sendBtn.classList.add('stop');
+        sendIcon.innerHTML = '<rect x="4" y="4" width="8" height="8" rx="1.5"/>';
+    } else {
+        sendBtn.classList.remove('stop');
+        sendIcon.innerHTML = '<line x1="8" y1="13" x2="8" y2="3"/><polyline points="3,8 8,3 13,8"/>';
+        sendBtn.disabled = !inputEl.value.trim();
+    }
+}
+
+// ─── 历史回放 ────────────────────────────────────────────
+async function loadHistory() {
+    try {
+        const r = await fetch(`/api/sessions/${encodeURIComponent(sessionName)}/messages`);
+        if (!r.ok) {
+            if (r.status === 404) {
+                navName.textContent = '会话不存在';
+                appendError('会话不存在,可能已被删除');
+                return;
+            }
+            throw new Error('HTTP ' + r.status);
+        }
+        const data = await r.json();
+        sessionMeta = data.session;
+        navName.textContent = sessionMeta.name;
+        navSub.textContent = sessionMeta.path;
+
+        for (const msg of data.messages) {
+            renderHistoryMessage(msg);
+        }
+        if (data.messages.length === 0) {
+            // 留 empty 状态
+        } else {
+            clearEmpty();
+        }
+        scrollToBottom(false);
+    } catch (e) {
+        appendError('加载历史失败: ' + e.message);
+    }
+}
+
+function renderHistoryMessage(msg) {
+    if (msg.role === 'user') {
+        // user 消息可能是纯文本(真用户输入) 或 tool_result 数组
+        const textBlocks = msg.blocks.filter(b => b.type === 'text');
+        const toolResults = msg.blocks.filter(b => b.type === 'tool_result');
+        if (textBlocks.length > 0) {
+            const text = textBlocks.map(b => b.text).join('\n');
+            appendUserBubble(text);
+        }
+        for (const tr of toolResults) {
+            fillToolResult({ toolUseId: tr.toolUseId, content: tr.content, isError: tr.isError });
+        }
+        return;
+    }
+    if (msg.role === 'assistant') {
+        let buf = '';
+        const flushText = () => {
+            if (buf) {
+                if (!currentAssistantEl) startAssistantBubble();
+                currentAssistantText += buf;
+                currentAssistantEl.innerHTML = renderMarkdown(currentAssistantText);
+                highlightWithin(currentAssistantEl);
+                buf = '';
+            }
+        };
+        for (const b of msg.blocks) {
+            if (b.type === 'text') buf += b.text;
+            else if (b.type === 'thinking') { /* 折叠不展示, MVP 跳过 */ }
+            else if (b.type === 'tool_use') {
+                flushText();
+                appendToolCard(b);
+            }
+        }
+        flushText();
+        finalizeAssistantBubble();
+    }
+}
+
+// ─── 发送 / 流式接收 ─────────────────────────────────────
+async function onSendOrStop() {
+    if (isStreaming) {
+        // 中断
+        if (currentReader) {
+            try { await currentReader.cancel(); } catch { /* */ }
+        }
+        return;
+    }
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    appendUserBubble(text);
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    setBusy(true);
+
+    // typing 占位
+    const typingRow = document.createElement('div');
+    typingRow.className = 'msg-row assistant';
+    typingRow.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
+    messagesEl.appendChild(typingRow);
+    scrollToBottom();
+
+    let typingRemoved = false;
+    const removeTyping = () => {
+        if (!typingRemoved && typingRow.parentNode) {
+            typingRow.remove();
+            typingRemoved = true;
+        }
+    };
+
+    try {
+        const resp = await fetch(`/api/sessions/${encodeURIComponent(sessionName)}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text }),
+        });
+        if (!resp.ok || !resp.body) {
+            removeTyping();
+            const errText = await resp.text().catch(() => '');
+            appendError(`发送失败 (HTTP ${resp.status}): ${errText.slice(0, 200)}`);
+            setBusy(false);
+            return;
+        }
+
+        const reader = resp.body.getReader();
+        currentReader = reader;
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            // SSE 按 \n\n 分包
+            let idx;
+            while ((idx = buffer.indexOf('\n\n')) >= 0) {
+                const block = buffer.slice(0, idx);
+                buffer = buffer.slice(idx + 2);
+                handleSseBlock(block, removeTyping);
+            }
+        }
+        removeTyping();
+    } catch (e) {
+        removeTyping();
+        if (e.name !== 'AbortError') appendError('网络错误: ' + e.message);
+    } finally {
+        currentReader = null;
+        finalizeAssistantBubble();
+        setBusy(false);
+    }
+}
+
+function handleSseBlock(block, removeTyping) {
+    let eventName = 'message';
+    let dataStr = '';
+    for (const line of block.split('\n')) {
+        if (line.startsWith(':')) continue;  // 心跳
+        if (line.startsWith('event:')) eventName = line.slice(6).trim();
+        else if (line.startsWith('data:')) dataStr += line.slice(5).trim();
+    }
+    if (!dataStr) return;
+    let payload;
+    try { payload = JSON.parse(dataStr); } catch { return; }
+
+    if (eventName === 'system_init') {
+        removeTyping();
+        return;
+    }
+    if (eventName === 'assistant_block') {
+        removeTyping();
+        const b = payload.block;
+        if (b.type === 'text') appendAssistantText(b.text);
+        else if (b.type === 'tool_use') appendToolCard(b);
+        else if (b.type === 'thinking') { /* skip MVP */ }
+        return;
+    }
+    if (eventName === 'tool_result') {
+        if (payload.block) fillToolResult(payload.block);
+        return;
+    }
+    if (eventName === 'result') {
+        removeTyping();
+        finalizeAssistantBubble();
+        // 失败时展示错误
+        if (!payload.success) {
+            appendError(payload.error || '执行失败');
+        }
+        return;
+    }
+    if (eventName === 'error') {
+        removeTyping();
+        appendError(payload.message || '未知错误');
+        return;
+    }
+    if (eventName === 'stderr') {
+        // MVP: 静默忽略 stderr,避免污染聊天流
+        console.log('[claude stderr]', payload.line);
+        return;
+    }
+}
+
+// ─── 输入框自适应高度 + 快捷键 ───────────────────────────
+inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + 'px';
+    if (!isStreaming) sendBtn.disabled = !inputEl.value.trim();
+});
+inputEl.addEventListener('keydown', (e) => {
+    // Enter 发送, Shift+Enter 换行 (桌面浏览器优化; 移动键盘上 Enter 一般是换行)
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+        // 移动端检测: window.matchMedia 触屏 → 不拦截
+        if (!matchMedia('(hover: none)').matches) {
+            e.preventDefault();
+            onSendOrStop();
+        }
+    }
+});
+
+// ─── 启动 ────────────────────────────────────────────────
+loadHistory();
+
+// ─── 分享 (按会话独立 ttyd + cloudflared) ─────────────
+const shareDlg = document.getElementById('shareDlg');
+const shareStatusEl = document.getElementById('shareStatus');
+const shareStatusText = document.getElementById('shareStatusText');
+const shareUrlEl = document.getElementById('shareUrl');
+const shareActionsEl = document.getElementById('shareActions');
+
+let shareBusy = false;
+
+const shareApi = () => `/api/sessions/${encodeURIComponent(sessionName)}/share`;
+
+async function fetchShare() {
+    const r = await fetch(shareApi());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+}
+
+function renderShare(state) {
+    const active = state && state.active && state.url;
+    shareStatusEl.classList.toggle('active', !!active);
+
+    if (active) {
+        const started = state.startedAt ? new Date(state.startedAt) : null;
+        const ago = started ? Math.max(1, Math.round((Date.now() - started.getTime()) / 1000)) : null;
+        shareStatusText.textContent = ago ? `分享中 · 已运行 ${formatDuration(ago)}` : '分享中';
+        shareUrlEl.style.display = '';
+        shareUrlEl.textContent = state.url;
+        shareActionsEl.innerHTML = `
+            <button type="button" class="share-btn primary" onclick="copyShareLink()">复制链接</button>
+            <div class="row">
+                <button type="button" class="share-btn muted" onclick="openShareLink()">在浏览器打开</button>
+                <button type="button" class="share-btn danger" onclick="stopShare()" ${shareBusy ? 'disabled' : ''}>关闭分享</button>
+            </div>`;
+    } else {
+        shareStatusText.textContent = shareBusy ? '正在启动 ttyd + cloudflared (~15s)…' : '未分享';
+        shareUrlEl.style.display = 'none';
+        shareActionsEl.innerHTML = `
+            <button type="button" class="share-btn primary" onclick="startShare()" ${shareBusy ? 'disabled' : ''}>
+                ${shareBusy ? '启动中…' : '启动终端分享'}
+            </button>`;
+    }
+}
+
+function formatDuration(sec) {
+    if (sec < 60) return sec + 's';
+    if (sec < 3600) return Math.floor(sec / 60) + 'm';
+    return Math.floor(sec / 3600) + 'h' + Math.floor((sec % 3600) / 60) + 'm';
+}
+
+async function openShareDialog() {
+    if (!sessionName) { showToast('未指定会话'); return; }
+    shareDlg.showModal();
+    renderShare(null);
+    try {
+        const s = await fetchShare();
+        renderShare(s);
+    } catch (e) {
+        shareStatusText.textContent = '获取状态失败: ' + e.message;
+    }
+}
+
+function closeShareDlg() { shareDlg.close(); }
+
+async function startShare() {
+    shareBusy = true;
+    renderShare(null);
+    try {
+        const r = await fetch(shareApi(), { method: 'POST' });
+        if (!r.ok) {
+            const txt = await r.text().catch(() => '');
+            let msg = txt;
+            try { msg = JSON.parse(txt).error || txt; } catch {}
+            throw new Error(msg || ('HTTP ' + r.status));
+        }
+        const s = await r.json();
+        shareBusy = false;
+        renderShare(s);
+    } catch (e) {
+        shareBusy = false;
+        shareStatusText.textContent = '启动失败: ' + e.message;
+        shareActionsEl.innerHTML = `<button type="button" class="share-btn primary" onclick="startShare()">重试</button>`;
+    }
+}
+
+async function stopShare() {
+    shareBusy = true;
+    try {
+        await fetch(shareApi(), { method: 'DELETE' });
+        shareBusy = false;
+        renderShare(null);
+        showToast('已关闭分享');
+    } catch (e) {
+        shareBusy = false;
+        shareStatusText.textContent = '关闭失败: ' + e.message;
+    }
+}
+
+async function copyShareLink() {
+    const link = shareUrlEl.textContent;
+    if (!link) return;
+    try {
+        await navigator.clipboard.writeText(link);
+        showToast('已复制链接');
+    } catch {
+        const range = document.createRange();
+        range.selectNode(shareUrlEl);
+        const sel = getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        showToast('请长按复制');
+    }
+}
+
+function openShareLink() {
+    const link = shareUrlEl.textContent;
+    if (link) window.open(link, '_blank', 'noopener');
+}
+
+// 点 backdrop 关闭
+shareDlg.addEventListener('click', (e) => {
+    if (e.target === shareDlg) shareDlg.close();
+});
+
+// ─── 文件抽屉 + 预览 ─────────────────────────────────────
+const fpDrawer = document.getElementById('fpDrawer');
+const fpBackdrop = document.getElementById('fpBackdrop');
+const fpTree = document.getElementById('fpTree');
+const fpRoot = document.getElementById('fpRoot');
+const filePreview = document.getElementById('filePreview');
+const fpvName = document.getElementById('fpvName');
+const fpvMeta = document.getElementById('fpvMeta');
+const fpvBody = document.getElementById('fpvBody');
+
+const fpEsc = (s) => String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const fpFmtSize = (n) => n < 1024 ? n + ' B' : n < 1024*1024 ? (n/1024).toFixed(1) + ' KB' : (n/1024/1024).toFixed(1) + ' MB';
+
+const ICO_DIR  = '<svg class="ico dir" viewBox="0 0 16 16" fill="currentColor"><path d="M2 4a1 1 0 0 1 1-1h2.4a1 1 0 0 1 .7.3l.7.7H13a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/></svg>';
+const ICO_FILE = '<svg class="ico file" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M9 2H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V5z"/><polyline points="9 2 9 5 12 5"/></svg>';
+const ICO_CHEV = '<svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 3 8 6 4 9"/></svg>';
+
+// 树状态: Map<subPath, {loaded, expanded, childrenEl}>
+const fpNodeState = new Map();
+let fpLoaded = false;
+
+// ── 打开/关闭 ──
+function openFilesPanel() {
+    if (!sessionName) { showToast('未指定会话'); return; }
+    fpDrawer.classList.add('open');
+    fpBackdrop.classList.add('open');
+    fpDrawer.setAttribute('aria-hidden', 'false');
+    if (!fpLoaded) fpLoadRoot();
+}
+function closeFilesPanel() {
+    fpDrawer.classList.remove('open');
+    fpBackdrop.classList.remove('open');
+    fpDrawer.setAttribute('aria-hidden', 'true');
+}
+
+// ── 加载根目录 ──
+async function fpLoadRoot() {
+    try {
+        const data = await fpFetch('');
+        // session.path 通过 GET /api/sessions/<name> 可拿, 简化: 不显示完整 root, 直接显项目名
+        fpRoot.textContent = sessionName;
+        fpTree.innerHTML = '';
+        fpTree.appendChild(fpBuildList(data.entries || [], ''));
+        fpLoaded = true;
+    } catch (e) {
+        fpTree.innerHTML = `<div class="fp-error">加载失败: ${fpEsc(e.message)}</div>`;
+    }
+}
+
+async function fpFetch(sub) {
+    const r = await fetch(`/files/${encodeURIComponent(sessionName)}/${sub}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}
+
+// ── 构建一层列表 (entries 已经在父级排过序) ──
+function fpBuildList(entries, parentSub) {
+    const wrap = document.createElement('div');
+    wrap.className = 'fp-list';
+    entries.forEach((e) => {
+        const sub = parentSub ? `${parentSub}/${e.name}` : e.name;
+        const node = document.createElement('div');
+        node.className = 'fp-node' + (e.type === 'file' ? ' file' : '');
+        node.innerHTML = `${ICO_CHEV}${e.type === 'dir' ? ICO_DIR : ICO_FILE}<span class="name">${fpEsc(e.name)}</span>`;
+        node.dataset.sub = sub;
+        node.dataset.type = e.type;
+        node.onclick = (ev) => { ev.stopPropagation(); fpNodeClick(node); };
+        wrap.appendChild(node);
+    });
+    return wrap;
+}
+
+async function fpNodeClick(node) {
+    const sub = node.dataset.sub;
+    const type = node.dataset.type;
+
+    if (type === 'file') {
+        closeFilesPanel();
+        openFilePreview(sub);
+        return;
+    }
+
+    // 目录: 展开/收起
+    let st = fpNodeState.get(sub);
+    if (!st) st = { loaded: false, expanded: false, childrenEl: null };
+
+    if (st.expanded && st.childrenEl) {
+        // 收起
+        st.childrenEl.remove();
+        st.childrenEl = null;
+        st.expanded = false;
+        node.classList.remove('expanded');
+        fpNodeState.set(sub, st);
+        return;
+    }
+
+    // 展开
+    node.classList.add('expanded');
+    const loading = document.createElement('div');
+    loading.className = 'fp-loading';
+    loading.textContent = '加载中…';
+    node.insertAdjacentElement('afterend', loading);
+
+    try {
+        const data = await fpFetch(sub);
+        loading.remove();
+        const children = fpBuildList(data.entries || [], sub);
+        children.className = 'fp-children';
+        node.insertAdjacentElement('afterend', children);
+        st.childrenEl = children;
+        st.loaded = true;
+        st.expanded = true;
+        fpNodeState.set(sub, st);
+    } catch (e) {
+        loading.outerHTML = `<div class="fp-error">${fpEsc(e.message)}</div>`;
+        node.classList.remove('expanded');
+    }
+}
+
+// ── 文件预览 ──
+const FP_CODE_LANGS = {
+    js:'javascript', mjs:'javascript', cjs:'javascript', ts:'typescript',
+    tsx:'tsx', jsx:'jsx', py:'python', rb:'ruby', go:'go', rs:'rust',
+    java:'java', kt:'kotlin', swift:'swift', c:'c', cc:'cpp', cpp:'cpp',
+    h:'c', hpp:'cpp', html:'markup', htm:'markup', xml:'markup', svg:'markup',
+    vue:'markup', css:'css', scss:'scss', less:'less', json:'json',
+    yaml:'yaml', yml:'yaml', toml:'toml', sh:'bash', bash:'bash', zsh:'bash',
+    sql:'sql',
+};
+
+function fpLangOf(name, ext) {
+    if (FP_CODE_LANGS[ext]) return FP_CODE_LANGS[ext];
+    const lower = (name || '').toLowerCase();
+    if (lower === 'dockerfile') return 'docker';
+    if (lower === 'makefile') return 'makefile';
+    return null;
+}
+
+async function openFilePreview(sub) {
+    fpvName.textContent = sub.split('/').pop();
+    fpvMeta.textContent = '';
+    fpvBody.innerHTML = '<div class="fpv-empty">加载中…</div>';
+    if (!filePreview.open) filePreview.showModal();
+
+    try {
+        const data = await fpFetch(sub);
+        fpvName.textContent = data.name || sub;
+        fpvMeta.textContent = fpFmtSize(data.bytes || 0);
+        const trunc = data.truncated
+            ? `<div class="fpv-trunc">⚠️ 文件超 512KB，仅显示前 512KB</div>` : '';
+        const raw = `/files/${encodeURIComponent(sessionName)}/${sub}?raw=1`;
+
+        if (data.kind === 'image') {
+            fpvBody.innerHTML = `<div class="fpv-card"><img class="full" src="${raw}" alt="${fpEsc(data.name)}"></div>`;
+            return;
+        }
+        if (data.kind === 'binary') {
+            fpvBody.innerHTML = `
+                <div class="fpv-card">
+                    <div class="fpv-empty">
+                        <p>无法预览此类型 (${fpEsc(data.ext || '未知')})</p>
+                        <p style="font-size:12px;color:var(--label-3)">大小: ${fpFmtSize(data.bytes)}</p>
+                        <a class="dl" href="${raw}" download="${fpEsc(data.name)}">下载</a>
+                    </div>
+                </div>`;
+            return;
+        }
+        // text 分支: md / 已知语言 / 兜底
+        if (data.ext === 'md' || data.ext === 'markdown') {
+            const html = (typeof marked !== 'undefined')
+                ? marked.parse(data.content || '')
+                : `<pre>${fpEsc(data.content || '')}</pre>`;
+            fpvBody.innerHTML = trunc + `<div class="fpv-card"><div class="md">${html}</div></div>`;
+            if (window.Prism) Prism.highlightAllUnder(fpvBody);
+            return;
+        }
+        const lang = fpLangOf(data.name, data.ext);
+        if (lang) {
+            fpvBody.innerHTML = trunc + `<div class="fpv-card"><pre class="code"><code class="language-${lang}">${fpEsc(data.content || '')}</code></pre></div>`;
+            if (window.Prism) Prism.highlightAllUnder(fpvBody);
+            return;
+        }
+        fpvBody.innerHTML = trunc + `<div class="fpv-card"><pre class="code">${fpEsc(data.content || '')}</pre></div>`;
+    } catch (e) {
+        fpvBody.innerHTML = `<div class="fpv-empty">加载失败: ${fpEsc(e.message)}</div>`;
+    }
+}
+
+function closeFilePreview() {
+    if (filePreview.open) filePreview.close();
+}
+
+</script>
+</body>
+</html>
